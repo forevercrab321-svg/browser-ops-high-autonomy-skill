@@ -1,0 +1,54 @@
+name: Release and Publish Skill
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve version and validate tag
+        id: version
+        run: |
+          VERSION=$(grep '^version:' skills/browser-ops-high-autonomy/skill.yaml | awk '{print $2}')
+          TAG=${GITHUB_REF_NAME#v}
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "Tag v$TAG does not match skill.yaml version $VERSION"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.version.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+
+      - name: Install ClawHub CLI
+        run: npm i -g clawhub
+
+      - name: Login ClawHub
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: clawhub login --token "$CLAWHUB_TOKEN"
+
+      - name: Publish to ClawHub
+        run: |
+          clawhub publish ./skills/browser-ops-high-autonomy \
+            --slug browser-ops-high-autonomy \
+            --name "Browser Ops High Autonomy" \
+            --version "${{ steps.version.outputs.version }}" \
+            --changelog "Release v${{ steps.version.outputs.version }}"
