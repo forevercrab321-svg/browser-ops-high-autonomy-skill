@@ -47,8 +47,15 @@ jobs:
 
       - name: Publish to ClawHub
         run: |
-          clawhub publish ./skills/browser-ops-high-autonomy \
+          set +e
+          OUT=$(clawhub publish ./skills/browser-ops-high-autonomy \
             --slug browser-ops-high-autonomy \
             --name "Browser Ops High Autonomy" \
             --version "${{ steps.version.outputs.version }}" \
-            --changelog "Release v${{ steps.version.outputs.version }}"
+            --changelog "Release v${{ steps.version.outputs.version }}" 2>&1)
+          CODE=$?
+          echo "$OUT"
+          if [ "$CODE" -ne 0 ]; then
+            echo "$OUT" | grep -qi "already exists" && exit 0
+            exit "$CODE"
+          fi
