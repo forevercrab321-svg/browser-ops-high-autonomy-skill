@@ -28,6 +28,7 @@ The skill never bypasses security controls or access restrictions.
 
 ## Files
 - `skills/browser-ops-high-autonomy/skill.yaml` — primary skill definition and execution policy.
+- `skills/browser-ops-high-autonomy/SKILL.md` — skill overview required by ClawHub publish flow.
 
 ## Open source
 This project is open-sourced under the MIT license.
